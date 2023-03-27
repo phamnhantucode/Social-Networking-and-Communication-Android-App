@@ -1,0 +1,1 @@
+rootProject.name = "com.example.ktor_clone_messenger_backend"
