@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">ChatChit</string>
+    <string name="account_field">Username</string>
+    <string name="passwordField">Password</string>
+    <string name="continue_button_text">Continue</string>
+    <string name="searchHolder">Search...</string>
+    <string name="sendMessageHolder">Type a message</string>
+    <string name="title_activity_main">MainActivity</string>
+</resources>
