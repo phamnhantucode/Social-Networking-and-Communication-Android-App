@@ -13,15 +13,30 @@ fun Application.configureSockets() {
         maxFrameSize = Long.MAX_VALUE
         masking = false
     }
+//    routing {
+//        webSocket("/ws") {
+//            send("You are connected!")// websocketSession
+//            for (frame in incoming) {
+//                if (frame is Frame.Text) {
+//                    val text = frame.readText()
+//                    outgoing.send(Frame.Text("YOU SAID: $text"))
+//                    if (text.equals("bye", ignoreCase = true)) {
+//                        close(CloseReason(CloseReason.Codes.NORMAL, "Client said BYE"))
+//                    }
+//                }
+//            }
+//        }
+//    }
     routing {
-        webSocket("/ws") { // websocketSession
+        webSocket("/echo") {
+            send("Please enter your name")
             for (frame in incoming) {
-                if (frame is Frame.Text) {
-                    val text = frame.readText()
-                    outgoing.send(Frame.Text("YOU SAID: $text"))
-                    if (text.equals("bye", ignoreCase = true)) {
-                        close(CloseReason(CloseReason.Codes.NORMAL, "Client said BYE"))
-                    }
+                frame as? Frame.Text ?: continue
+                val receivedText = frame.readText()
+                if (receivedText.equals("bye", ignoreCase = true)) {
+                    close(CloseReason(CloseReason.Codes.NORMAL, "Client said BYE"))
+                } else {
+                    send(Frame.Text("Hi, $receivedText!"))
                 }
             }
         }

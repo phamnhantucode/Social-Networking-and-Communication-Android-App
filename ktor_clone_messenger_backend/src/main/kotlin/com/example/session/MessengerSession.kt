@@ -1,4 +1,6 @@
 package com.example.session
 
-class MessengerSession {
-}
+data class MessengerSession (
+    val userId: String,
+    val sessionId: String = ""
+)
