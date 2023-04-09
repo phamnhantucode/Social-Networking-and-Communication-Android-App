@@ -1,6 +1,9 @@
 package com.phamnhantucode.composeclonemessengerclient.loginfeature
 
 import android.annotation.SuppressLint
+import android.content.Context
+import android.content.Intent
+import android.util.Log
 import android.widget.Space
 import android.widget.Toast
 import androidx.compose.foundation.Image
@@ -33,8 +36,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.phamnhantucode.composeclonemessengerclient.R
+import com.phamnhantucode.composeclonemessengerclient.chatfeature.ChatActivity
+import com.phamnhantucode.composeclonemessengerclient.core.SharedData
+import com.phamnhantucode.composeclonemessengerclient.core.util.DialogBoxLoading
 import com.phamnhantucode.composeclonemessengerclient.ui.theme.Teal200
 import com.phamnhantucode.composeclonemessengerclient.ui.theme.lightTextBody
+import timber.log.Timber
 import kotlin.coroutines.coroutineContext
 
 @Composable
@@ -102,13 +109,29 @@ fun AuthSection(
     modifier: Modifier = Modifier,
     viewModel: LoginViewModel = hiltViewModel()
 ) {
-    val authState = viewModel.authState.collectAsState()
-    if (authState.value.loading) {
-        Toast.makeText(LocalContext.current, "Loading", Toast.LENGTH_SHORT)
+    val authState by
+        viewModel.authState.collectAsState()
+    val context = LocalContext.current
+
+
+    if (authState.loading) {
+        DialogBoxLoading()
     }
-    if (authState.value.success != null) {
-        Toast.makeText(LocalContext.current, "Success", Toast.LENGTH_SHORT)
+
+
+    LaunchedEffect(key1 = authState) {
+        authState.success?.let {user ->
+            val preference = context.getSharedPreferences(context.resources.getString(R.string.preference_file_key), Context.MODE_PRIVATE)
+            preference.edit().putString("account", viewModel.accountTf.value)
+            preference.edit().putString("password", viewModel.passwordTf.value)
+
+            SharedData.user = user
+            Log.e("EROOR",SharedData.user.toString())
+            context.startActivity(Intent(context, ChatActivity::class.java))
+
+        }
     }
+
     Column(
         modifier = modifier
             .padding(horizontal = 25.dp),

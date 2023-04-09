@@ -1,15 +1,16 @@
 package com.phamnhantucode.composeclonemessengerclient.loginfeature.data
 
 import com.phamnhantucode.composeclonemessengerclient.core.domain.model.User
+import com.phamnhantucode.composeclonemessengerclient.core.util.Constant.BASE_URL
 import com.phamnhantucode.composeclonemessengerclient.core.util.Resource
 import kotlinx.coroutines.flow.Flow
 
 interface LoginService {
 
-    suspend fun login(): User
+    suspend fun login(account: String, password: String): User
 
     companion object {
-        const val BASE_URL = "http://192.168.0.12:8080"
+
     }
 
     sealed class Endpoints(val url: String) {

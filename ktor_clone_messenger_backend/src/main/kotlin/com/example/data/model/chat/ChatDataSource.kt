@@ -5,11 +5,14 @@ import com.example.data.model.user.User
 import org.bson.codecs.pojo.annotations.BsonId
 
 interface ChatDataSource {
-    suspend fun getAllChats(user: User): List<Chat>
+    suspend fun getAllChats(userId: String): List<Chat>
 
     suspend fun insertChat(chat: Chat)
 
     suspend fun getChat(@BsonId id: String): Chat?
 
-    suspend fun insertMessage(chat: Chat, message: MessageTransfer): Message
+    suspend fun insertMessage(chat: Chat, message: MessageTransfer): Chat
+
+    suspend fun getAllMessages(chatId: String): List<Message>?
+
 }

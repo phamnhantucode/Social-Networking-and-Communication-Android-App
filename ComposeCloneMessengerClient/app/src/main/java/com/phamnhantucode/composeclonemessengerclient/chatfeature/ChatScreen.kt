@@ -1,12 +1,15 @@
 package com.phamnhantucode.composeclonemessengerclient.chatfeature
 
 import android.annotation.SuppressLint
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -29,14 +32,24 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
 import com.phamnhantucode.composeclonemessengerclient.R
+import com.phamnhantucode.composeclonemessengerclient.chatfeature.data.MessageDto
+import com.phamnhantucode.composeclonemessengerclient.core.SharedData
+import com.phamnhantucode.composeclonemessengerclient.core.util.getChatName
+import com.phamnhantucode.composeclonemessengerclient.core.util.getPositionGroupMessage
 import com.phamnhantucode.composeclonemessengerclient.ui.theme.Blue
 import com.phamnhantucode.composeclonemessengerclient.ui.theme.lightColor1
 import com.phamnhantucode.composeclonemessengerclient.ui.theme.lightColor2
 import com.phamnhantucode.composeclonemessengerclient.ui.theme.lightTextBody
 
 @Composable
-fun ChatScreen() {
+fun ChatScreen(
+    navController: NavHostController,
+    viewModel: ChatViewModel = SharedData.chatViewModel!!
+) {
+    Log.e("ChatDto", viewModel.sharedVM.currentMessageState.toString())
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colors.background
@@ -44,21 +57,23 @@ fun ChatScreen() {
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            TopBarChatScreen()
+            TopBarChatScreen(viewModel = viewModel)
             ListMessages(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(Float.MAX_VALUE)
-                    .padding(horizontal = 12.dp)
+                    .padding(horizontal = 12.dp),
+                viewModel = viewModel
             )
-            BottomBarChatScreen()
+            BottomBarChatScreen(viewModel = viewModel)
         }
     }
 }
 
 @Composable
 fun TopBarChatScreen(
-    isDarkTheme: Boolean = false
+    isDarkTheme: Boolean = false,
+    viewModel: ChatViewModel
 ) {
     var iconColor by remember {
         mutableStateOf(Color.Cyan)
@@ -101,7 +116,7 @@ fun TopBarChatScreen(
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = "Username",
+                    text = getChatName(viewModel.sharedVM.currentMessageState.value),
                     style = TextStyle(
                         color = Color.Black,
                         fontWeight = FontWeight.SemiBold,
@@ -154,7 +169,8 @@ fun TopBarChatScreen(
 @Composable
 fun ListMessages(
     isDarkTheme: Boolean = isSystemInDarkTheme(),
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: ChatViewModel
 ) {
     val listState = rememberLazyListState()
     var backgroundColor by remember {
@@ -163,31 +179,31 @@ fun ListMessages(
 // Remember a CoroutineScope to be able to launch
     val coroutineScope = rememberCoroutineScope()
 
-        LazyColumn(
-            state = listState,
-            modifier = modifier,
-            verticalArrangement = Arrangement.spacedBy(2.dp),
-            reverseLayout = true
-        ) {
-            item {
-                Message(position = PositionGroupMessage.BOTTOM)
-            }
-            item {
-                Message(position = PositionGroupMessage.MIDDLE)
-            }
-            item {
-                Message(position = PositionGroupMessage.TOP)
-            }
-            item {
-                Message(position = PositionGroupMessage.SINGLE, isBelongUser = false)
-            }
+    LazyColumn(
+        state = listState,
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+        reverseLayout = true
+    ) {
+        items(viewModel.sharedVM.currentMessageState.value.messages.size) { index ->
+            Message(
+                position = getPositionGroupMessage(
+                    index,
+                    viewModel.sharedVM.currentMessageState.value.messages
+                ),
+                isBelongUser = viewModel.sharedVM.currentMessageState.value.messages[index].senderId == SharedData.user!!.userid,
+                messageDto = viewModel.sharedVM.currentMessageState.value.messages[index]
+            )
         }
+    }
+
 }
 
 @Composable
 fun Message(
     isBelongUser: Boolean = true,
     position: PositionGroupMessage = PositionGroupMessage.SINGLE,
+    messageDto: MessageDto
 ) {
     var shape by remember {
         mutableStateOf(
@@ -250,6 +266,9 @@ fun Message(
         horizontalAlignment = alignment,
         modifier = Modifier
             .fillMaxWidth()
+            .clickable {
+
+            }
     ) {
         Box(
             modifier = Modifier.fillMaxWidth(0.8f)
@@ -264,7 +283,7 @@ fun Message(
 
                 ) {
                 Text(
-                    text = "Demo message here",
+                    text = messageDto.content,
                     style = TextStyle(
                         color = textColor,
                         fontWeight = FontWeight.Normal,
@@ -278,7 +297,8 @@ fun Message(
 
 @Composable
 fun BottomBarChatScreen(
-    isDarkTheme: Boolean = false
+    isDarkTheme: Boolean = false,
+    viewModel: ChatViewModel = hiltViewModel()
 ) {
     var chatValue by remember {
         mutableStateOf("")
@@ -298,7 +318,7 @@ fun BottomBarChatScreen(
             .background(backgroundColor)
             .padding(horizontal = 12.dp, vertical = 12.dp),
 
-    ) {
+        ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(15.dp),
@@ -342,9 +362,9 @@ fun BottomBarChatScreen(
                     Box(
                         modifier = Modifier,
 
-                    ) {
+                        ) {
                         if (chatValue.isNotBlank()) {
-                            innerTextField()    
+                            innerTextField()
                         } else {
                             Text(text = stringResource(id = R.string.sendMessageHolder))
                         }
@@ -364,6 +384,9 @@ fun BottomBarChatScreen(
                 colorFilter = ColorFilter.tint(iconColor),
                 modifier = Modifier
                     .size(24.dp)
+                    .clickable {
+                        viewModel.onSendMessage()
+                    }
             )
         }
     }

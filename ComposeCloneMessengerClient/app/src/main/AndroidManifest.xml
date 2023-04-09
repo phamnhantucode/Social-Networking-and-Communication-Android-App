@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:name=".core.BaseApplication"
         android:allowBackup="true"
@@ -13,6 +15,11 @@
         android:theme="@style/Theme.ComposeCloneMessengerClient"
         tools:targetApi="31">
         <activity
+            android:name=".chatfeature.ChatActivity"
+            android:exported="false"
+            android:label="@string/title_activity_chat"
+            android:theme="@style/Theme.ComposeCloneMessengerClient" />
+        <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/title_activity_main"
@@ -23,10 +30,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".loginfeature.LoginActivity"
-            android:exported="false">
-
-        </activity>
+        <activity
+            android:name=".loginfeature.LoginActivity"
+            android:exported="false"></activity>
     </application>
 
 </manifest>

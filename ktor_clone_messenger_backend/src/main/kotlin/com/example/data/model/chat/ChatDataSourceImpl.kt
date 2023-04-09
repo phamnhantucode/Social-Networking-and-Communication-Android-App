@@ -12,8 +12,15 @@ class ChatDataSourceImpl(
 ) : ChatDataSource {
 
     private val chats = db.getCollection<Chat>("chat")
-    override suspend fun getAllChats(user: User): List<Chat> {
-        return chats.find().toList()
+    override suspend fun getAllChats(userId: String): List<Chat> {
+        return chats.find().toList().filter {
+            if (
+                it.participants.find { it.id == userId }
+                != null
+            )
+                true
+            else false
+        }
     }
 
     override suspend fun insertChat(chat: Chat) {
@@ -25,7 +32,7 @@ class ChatDataSourceImpl(
         return chats.findOne(Chat::id eq id)
     }
 
-    override suspend fun insertMessage(chat: Chat, message: MessageTransfer): Message {
+    override suspend fun insertMessage(chat: Chat, message: MessageTransfer): Chat {
         val message = Message(
             content = message.text,
             senderId = message.senderId,
@@ -37,6 +44,13 @@ class ChatDataSourceImpl(
             Chat::messages,
             chat.messages
         ))
-        return message
+        return chat
+    }
+
+    override suspend fun getAllMessages(chatId: String): List<Message>? {
+        val chat = chats.findOne(Chat::id eq chatId)
+        return chat?.let {
+            return it.messages as List<Message>
+        }
     }
 }

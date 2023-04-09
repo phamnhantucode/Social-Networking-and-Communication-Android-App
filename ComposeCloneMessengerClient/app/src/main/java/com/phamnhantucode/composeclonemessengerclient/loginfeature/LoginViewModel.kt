@@ -33,7 +33,7 @@ class LoginViewModel @Inject constructor(
 
     fun login() {
         viewModelScope.launch {
-            loginRepository.login().collectLatest {
+            loginRepository.login(accountTf.value, password = passwordTf.value).collectLatest {
                 when (it) {
                     is Resource.Success -> {
                         authState.emit(AuthState(it.data))

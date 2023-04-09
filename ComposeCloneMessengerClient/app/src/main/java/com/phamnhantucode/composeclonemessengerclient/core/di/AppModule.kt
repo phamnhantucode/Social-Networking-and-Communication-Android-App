@@ -30,10 +30,6 @@ object AppModule {
         }
     }
 
-    @Provides
-    @Singleton
-    fun provideLoginService(client: HttpClient): LoginService {
-        return LoginServiceImpl(client)
-    }
+
 
 }

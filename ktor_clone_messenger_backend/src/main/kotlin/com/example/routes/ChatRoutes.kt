@@ -87,6 +87,22 @@ fun Route.chat(chatController: ChatController) {
         }
 
     }
+    get("/chat/{chatId}") {
+        val messages = chatController.getAllMessages(call.parameters["chatId"].toString())
+        messages?.let {
+            call.respond(
+                messages
+            )
+        }
+    }
+    get("/chat/user/{userId}") {
+        val chats = chatController.getAllChats(call.parameters["userId"].toString())
+        chats?.let {
+            call.respond(
+                chats
+            )
+        }
+    }
 }
 
 fun Route.image(mainController: MainController) {

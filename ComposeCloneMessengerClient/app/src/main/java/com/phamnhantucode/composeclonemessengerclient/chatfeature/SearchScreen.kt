@@ -44,13 +44,17 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 import com.phamnhantucode.composeclonemessengerclient.R
 import com.phamnhantucode.composeclonemessengerclient.ui.theme.lightColor2
 import com.phamnhantucode.composeclonemessengerclient.ui.theme.lightTextBody
 import kotlinx.coroutines.delay
 
 @Composable
-fun SearchScreen() {
+fun SearchScreen(
+    navController: NavHostController,
+    viewModel: ChatViewModel
+) {
     Surface(
         color = MaterialTheme.colors.background,
         modifier = Modifier.fillMaxSize()
@@ -66,7 +70,11 @@ fun SearchScreen() {
             MidBarSearchScreen(
                 modifier = Modifier.fillMaxWidth()
             )
-            Divider(startIndent = 20.dp, thickness = 2.dp, modifier = Modifier.align(CenterHorizontally))
+            Divider(
+                startIndent = 20.dp,
+                thickness = 2.dp,
+                modifier = Modifier.align(CenterHorizontally)
+            )
             LazyColumn(
             ) {
                 items(200) {
@@ -205,6 +213,7 @@ fun SinglePerson(
         )
     }
 }
+
 enum class SubComposeID {
     PRE_CALCULATE_ITEM,
     ITEM,
@@ -240,8 +249,9 @@ fun TabRow(
                 .padding(paddingValues)
                 .selectableGroup()
         ) { constraints ->
-            val tabMeasurable: List<Placeable> = subcompose(SubComposeID.PRE_CALCULATE_ITEM, tabItem)
-                .map { it.measure(constraints) }
+            val tabMeasurable: List<Placeable> =
+                subcompose(SubComposeID.PRE_CALCULATE_ITEM, tabItem)
+                    .map { it.measure(constraints) }
             val itemsCount = tabMeasurable.size
             val maxItemWidth = tabMeasurable.maxOf { it.width }
             val maxItemHeight = tabMeasurable.maxOf { it.height }
@@ -332,9 +342,11 @@ fun TabItem(
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Image(painter = painterResource(id = icon), contentDescription = title,
-        modifier = Modifier.size(20.dp),
-        colorFilter = ColorFilter.tint(color = MaterialTheme.colors.onPrimary))
+        Image(
+            painter = painterResource(id = icon), contentDescription = title,
+            modifier = Modifier.size(20.dp),
+            colorFilter = ColorFilter.tint(color = MaterialTheme.colors.onPrimary)
+        )
         Text(
             text = title,
             Modifier

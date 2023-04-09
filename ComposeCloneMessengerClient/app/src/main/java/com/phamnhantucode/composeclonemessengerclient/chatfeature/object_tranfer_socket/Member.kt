@@ -1,6 +1,6 @@
 package com.example.data.model.object_tranfer_socket
 
-import io.ktor.websocket.*
+import io.ktor.http.cio.websocket.*
 import kotlinx.serialization.Serializable
 
 data class Member(

@@ -76,19 +76,19 @@ class ChatController(
 
     suspend fun sendMessage(data: String) {
         val messageTranfer = Json.decodeFromString<MessageTransfer>(data)
-        val chat = chatDataSource.getChat(messageTranfer.chatId)
-        val message = chat?.let { chatDataSource.insertMessage(it, messageTranfer) }
-        message?.let {
-            chat?.participants?.forEach {
-                members[it.id]?.socket?.send(
+        var chat = chatDataSource.getChat(messageTranfer.chatId)
+        chat = chat?.let { chatDataSource.insertMessage(it, messageTranfer) }
+        chat?.let {
+            it.participants?.forEach {user ->
+                members[user.id]?.socket?.send(
                     Frame.Text(
                         Json.encodeToString(
                             Command.serializer(),
                             Command(
                                 command = CommandType.RECEIVE_MESSAGE.command,
                                 data = Json.encodeToString(
-                                    Message.serializer(),
-                                    message
+                                    Chat.serializer(),
+                                    it
                                 )
                             )
                         )
@@ -98,7 +98,15 @@ class ChatController(
         }
     }
 
+    suspend fun getAllMessages(chatId: String): List<Message> {
+        return chatDataSource.getAllMessages(chatId) ?: throw ChatIsNotExistsException()
+    }
+
+    suspend fun getAllChats(userId: String): List<Chat> {
+        return chatDataSource.getAllChats(userId)
+    }
 }
 
 
 class MemberAlreadyExistsException: Exception("Member already exists")
+class ChatIsNotExistsException: Exception("ChatIsNotExistsException")

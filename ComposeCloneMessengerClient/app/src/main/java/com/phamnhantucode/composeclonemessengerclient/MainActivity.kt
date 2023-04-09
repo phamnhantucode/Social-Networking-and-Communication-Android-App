@@ -44,18 +44,18 @@ fun Greeting(name: String) {
     Text(text = "Hello $name!")
 }
 
-@Preview(showBackground = true, device = Devices.PIXEL_4)
-@Composable
-fun DefaultPreview() {
-    ComposeCloneMessengerClientTheme {
-        HomeScreen()
-    }
-}
-
-@Preview(showBackground = true, device = Devices.PIXEL_4)
-@Composable
-fun DarkTheme() {
-    ComposeCloneMessengerClientTheme(darkTheme = true) {
-        ChatScreen()
-    }
-}
+//@Preview(showBackground = true, device = Devices.PIXEL_4)
+//@Composable
+//fun DefaultPreview() {
+//    ComposeCloneMessengerClientTheme {
+//        HomeScreen()
+//    }
+//}
+//
+//@Preview(showBackground = true, device = Devices.PIXEL_4)
+//@Composable
+//fun DarkTheme() {
+//    ComposeCloneMessengerClientTheme(darkTheme = true) {
+//        ChatScreen()
+//    }
+//}
