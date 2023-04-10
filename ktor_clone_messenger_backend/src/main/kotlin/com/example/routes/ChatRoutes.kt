@@ -70,7 +70,7 @@ fun Route.chat(chatController: ChatController) {
                 socket = this
             )
 
-            chatController.observerIncoming(incoming
+            chatController.observerIncoming(session, incoming
                 .consumeAsFlow()
                 .filter { it is Frame.Text }
                 .map {frame ->
