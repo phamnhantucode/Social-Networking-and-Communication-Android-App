@@ -37,31 +37,61 @@ fun getTimeMessage(chatDto: ChatDto): String {
 }
 
 fun getPositionGroupMessage(index: Int, messages: List<MessageDto>): PositionGroupMessage {
-    var position = PositionGroupMessage.SINGLE
-    if (messages.size ==1) return PositionGroupMessage.SINGLE
-    if (index == 0) {
-        if (messages[index+1].senderId == messages[index].senderId) {
-            return PositionGroupMessage.BOTTOM
+    if (messages[index].senderId == SharedData.user?.userid ?: "") {
+        var position = PositionGroupMessage.USER_SINGLE
+        if (messages.size ==1) return PositionGroupMessage.USER_SINGLE
+        if (index == 0) {
+            if (messages[index+1].senderId == messages[index].senderId) {
+                return PositionGroupMessage.USER_BOTTOM
+            }
+            return PositionGroupMessage.USER_SINGLE
         }
-        return PositionGroupMessage.SINGLE
+        if (index == messages.size-1) {
+            if (messages[index-1].senderId == messages[index].senderId) {
+                return PositionGroupMessage.USER_TOP
+            }
+            return PositionGroupMessage.USER_SINGLE
+        }
+        when {
+            messages[index].senderId == messages[index-1].senderId
+                    && messages[index].senderId==messages[index+1].senderId -> {
+                position = PositionGroupMessage.USER_MIDDLE
+            }
+            messages[index].senderId == messages[index-1].senderId -> {
+                position = PositionGroupMessage.USER_TOP
+            }
+            messages[index].senderId == messages[index+1].senderId -> {
+                position = PositionGroupMessage.USER_BOTTOM
+            }
+        }
+        return position
+    } else {
+        var position = PositionGroupMessage.ANOTHER_SINGLE
+        if (messages.size ==1) return PositionGroupMessage.ANOTHER_SINGLE
+        if (index == 0) {
+            if (messages[index+1].senderId == messages[index].senderId) {
+                return PositionGroupMessage.ANOTHER_BOTTOM
+            }
+            return PositionGroupMessage.ANOTHER_SINGLE
+        }
+        if (index == messages.size-1) {
+            if (messages[index-1].senderId == messages[index].senderId) {
+                return PositionGroupMessage.ANOTHER_TOP
+            }
+            return PositionGroupMessage.ANOTHER_SINGLE
+        }
+        when  {
+            messages[index].senderId==messages[index-1].senderId && messages[index].senderId==messages[index+1].senderId -> {
+                position = PositionGroupMessage.ANOTHER_MIDDLE
+            }
+            messages[index].senderId==messages[index-1].senderId -> {
+                position = PositionGroupMessage.ANOTHER_TOP
+            }
+            messages[index].senderId==messages[index+1].senderId -> {
+                position = PositionGroupMessage.ANOTHER_BOTTOM
+            }
+        }
+        return position
     }
-    if (index == messages.size-1) {
-        if (messages[index-1].senderId == messages[index].senderId) {
-            return PositionGroupMessage.TOP
-        }
-        return PositionGroupMessage.SINGLE
-    }
-    when (messages[index].senderId) {
-        messages[index-1].senderId, messages[index+1].senderId -> {
-            position = PositionGroupMessage.MIDDLE
-        }
-        messages[index-1].senderId -> {
-            position = PositionGroupMessage.TOP
-        }
-        messages[index+1].senderId -> {
-            position = PositionGroupMessage.BOTTOM
-        }
-    }
-    return position
 }
 

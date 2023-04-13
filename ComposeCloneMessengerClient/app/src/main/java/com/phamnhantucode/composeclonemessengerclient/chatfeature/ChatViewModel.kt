@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import timber.log.Timber
 import javax.inject.Inject
@@ -37,6 +38,7 @@ class ChatViewModel @Inject constructor(
 ) : ViewModel() {
     val sharedVM = SaveStateVM
 
+
     fun startWebSocketService() {
 
         SharedData.user?.let { user ->
@@ -45,6 +47,7 @@ class ChatViewModel @Inject constructor(
                 val init = chatSocketService.initWebSocketSession()
                 when (init) {
                     is Resource.Success -> {
+                        sharedVM.connectedSocket = true
                         chatSocketService.observe()
                             .onEach { command ->
                                 when (command.command) {
@@ -62,6 +65,9 @@ class ChatViewModel @Inject constructor(
                                             it.value?.id == chat.id
                                         }?.let {
                                             it.value = chat
+                                            if (sharedVM._currentMessageState.value.id == chat.id) {
+                                                sharedVM._currentMessageState.value = chat
+                                            }
                                         }
                                     }
                                 }
@@ -69,8 +75,11 @@ class ChatViewModel @Inject constructor(
                     }
                     is Resource.Error -> {
 //                        _toastEvent.emit(result.message ?: "Unknown error")
+                        Log.e("ERROR", init.message ?: "Unknown error")
                     }
-                    else -> {}
+                    else -> {
+                        Log.e("ERROR", init.message ?: "Unknown error")
+                    }
                 }
             }
 
@@ -108,6 +117,7 @@ class ChatViewModel @Inject constructor(
                     System.currentTimeMillis()
                 )
             }
+            sharedVM.messageTf.value = ""
         }
     }
 
@@ -119,15 +129,18 @@ class ChatViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             chatSocketService.send(
-                Command(
-                    CommandType.SEND_MESSAGE.command,
-                    data = Json.encodeToString(
-                        MessageTransfer.serializer(),
-                        MessageTransfer(
-                            chatId = chatId,
-                            senderId = senderId,
-                            text = text,
-                            createAt = createAt
+                Json.encodeToString(
+                    Command.serializer(),
+                    Command(
+                        CommandType.SEND_MESSAGE.command,
+                        data = Json.encodeToString(
+                            MessageTransfer.serializer(),
+                            MessageTransfer(
+                                chatId = chatId,
+                                senderId = senderId,
+                                text = text,
+                                createAt = createAt
+                            )
                         )
                     )
                 )
@@ -138,7 +151,7 @@ class ChatViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
-        disconnect()
+//        disconnect()
     }
 
     fun disconnect() {

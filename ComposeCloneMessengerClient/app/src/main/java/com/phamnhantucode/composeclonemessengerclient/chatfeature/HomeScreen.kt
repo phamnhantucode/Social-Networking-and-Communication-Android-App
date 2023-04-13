@@ -51,21 +51,21 @@ fun HomeScreen(
     navController: NavHostController,
     viewModel: ChatViewModel
 ) {
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(key1 = lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_START) {
-                viewModel.startWebSocketService()
-            }
-            if (event == Lifecycle.Event.ON_DESTROY) {
-                viewModel.disconnect()
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
-    }
+//    val lifecycleOwner = LocalLifecycleOwner.current
+//    DisposableEffect(key1 = lifecycleOwner) {
+//        val observer = LifecycleEventObserver { _, event ->
+//            if (event == Lifecycle.Event.ON_START) {
+//                viewModel.startWebSocketService()
+//            }
+//            if (event == Lifecycle.Event.ON_DESTROY) {
+////                viewModel.disconnect()
+//            }
+//        }
+//        lifecycleOwner.lifecycle.addObserver(observer)
+//        onDispose {
+//            lifecycleOwner.lifecycle.removeObserver(observer)
+//        }
+//    }
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colors.background
@@ -247,7 +247,7 @@ fun ListChatHome(
 @Composable
 fun SingleChat(
     navController: NavHostController,
-    chatDtoState: State<ChatDto>,
+    chatDtoState: MutableState<ChatDto>,
     isOnline: Boolean = true,
     isTodayStory: Boolean = true,
     isSeenTodayStory: Boolean = true,

@@ -43,6 +43,7 @@ import com.phamnhantucode.composeclonemessengerclient.ui.theme.Blue
 import com.phamnhantucode.composeclonemessengerclient.ui.theme.lightColor1
 import com.phamnhantucode.composeclonemessengerclient.ui.theme.lightColor2
 import com.phamnhantucode.composeclonemessengerclient.ui.theme.lightTextBody
+import kotlinx.coroutines.launch
 
 @Composable
 fun ChatScreen(
@@ -65,6 +66,7 @@ fun ChatScreen(
                     .padding(horizontal = 12.dp),
                 viewModel = viewModel
             )
+
             BottomBarChatScreen(viewModel = viewModel)
         }
     }
@@ -73,7 +75,8 @@ fun ChatScreen(
 @Composable
 fun TopBarChatScreen(
     isDarkTheme: Boolean = false,
-    viewModel: ChatViewModel
+    viewModel: ChatViewModel,
+    modifier: Modifier = Modifier
 ) {
     var iconColor by remember {
         mutableStateOf(Color.Cyan)
@@ -85,7 +88,7 @@ fun TopBarChatScreen(
         backgroundColor = Color.Black
     }
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .background(backgroundColor)
             .padding(horizontal = 10.dp, vertical = 12.dp),
@@ -178,21 +181,33 @@ fun ListMessages(
     }
 // Remember a CoroutineScope to be able to launch
     val coroutineScope = rememberCoroutineScope()
-
+    val currentChat = viewModel.sharedVM.currentMessageState.value
+//    LaunchedEffect(key1 = currentChat.messages.size) {
+//        coroutineScope.launch {
+//            coroutineScope.launch {
+//                listState.animateScrollToItem(currentChat.messages.size - 1)
+//            }
+//        }
+//    }
+//
+//    LaunchedEffect(key1 = true) {
+//        coroutineScope.launch {
+//            listState.animateScrollToItem(currentChat.messages.size - 1)
+//        }
+//    }
     LazyColumn(
         state = listState,
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(2.dp),
         reverseLayout = true
     ) {
-        items(viewModel.sharedVM.currentMessageState.value.messages.size) { index ->
+        items(currentChat.messages.size) { index ->
             Message(
                 position = getPositionGroupMessage(
                     index,
-                    viewModel.sharedVM.currentMessageState.value.messages
+                    currentChat.messages
                 ),
-                isBelongUser = viewModel.sharedVM.currentMessageState.value.messages[index].senderId == SharedData.user!!.userid,
-                messageDto = viewModel.sharedVM.currentMessageState.value.messages[index]
+                messageDto = currentChat.messages[index]
             )
         }
     }
@@ -201,10 +216,11 @@ fun ListMessages(
 
 @Composable
 fun Message(
-    isBelongUser: Boolean = true,
-    position: PositionGroupMessage = PositionGroupMessage.SINGLE,
+    position: PositionGroupMessage = PositionGroupMessage.USER_SINGLE,
     messageDto: MessageDto
 ) {
+    val isBelongUser: Boolean = messageDto.senderId == SharedData.user!!.userid
+    Log.e("Test", " ${messageDto} userId = ${SharedData.user!!.userid}, ${isBelongUser}")
     var shape by remember {
         mutableStateOf(
             RoundedCornerShape(
@@ -220,12 +236,14 @@ fun Message(
         mutableStateOf(false)
     }
     val alignment = if (isBelongUser) Alignment.End else Alignment.Start
-    var backgroundColor by remember {
-        mutableStateOf(Blue)
-    }
-    var textColor by remember {
-        mutableStateOf(Color.White)
-    }
+//    var backgroundColor by remember {
+//        mutableStateOf(Blue)
+//    }
+//    var textColor by remember {
+//        mutableStateOf(Color.White)
+//    }
+    var backgroundColor = Blue
+    var textColor = Color.White
 
 
     if (!isBelongUser) {
@@ -233,32 +251,62 @@ fun Message(
         textColor = Color.Black
     }
     when (position) {
-        PositionGroupMessage.TOP -> {
+        PositionGroupMessage.USER_TOP -> {
             shape = RoundedCornerShape(
                 topStart = 22.dp,
                 topEnd = 22.dp,
                 bottomStart = 22.dp,
-                bottomEnd = 10.dp
+                bottomEnd = 5.dp
             )
         }
-        PositionGroupMessage.MIDDLE -> {
+        PositionGroupMessage.USER_MIDDLE -> {
             shape = RoundedCornerShape(
                 topStart = 22.dp,
-                topEnd = 10.dp,
+                topEnd = 5.dp,
                 bottomStart = 22.dp,
-                bottomEnd = 10.dp
+                bottomEnd = 5.dp
             )
         }
-        PositionGroupMessage.BOTTOM -> {
+        PositionGroupMessage.USER_BOTTOM -> {
             shape = RoundedCornerShape(
                 topStart = 22.dp,
-                topEnd = 10.dp,
+                topEnd = 5.dp,
+                bottomStart = 22.dp,
+                bottomEnd = 22.dp
+            )
+        }
+
+        PositionGroupMessage.ANOTHER_TOP -> {
+            shape = RoundedCornerShape(
+                topStart = 22.dp,
+                topEnd = 22.dp,
+                bottomStart = 5.dp,
+                bottomEnd = 22.dp
+            )
+        }
+        PositionGroupMessage.ANOTHER_MIDDLE -> {
+            shape = RoundedCornerShape(
+                topStart = 5.dp,
+                topEnd = 22.dp,
+                bottomStart = 5.dp,
+                bottomEnd = 22.dp
+            )
+        }
+        PositionGroupMessage.ANOTHER_BOTTOM -> {
+            shape = RoundedCornerShape(
+                topStart = 5.dp,
+                topEnd = 22.dp,
                 bottomStart = 22.dp,
                 bottomEnd = 22.dp
             )
         }
         else -> {
-
+            RoundedCornerShape(
+                topStart = 22.dp,
+                topEnd = 22.dp,
+                bottomStart = 22.dp,
+                bottomEnd = 22.dp
+            )
         }
     }
 
@@ -266,9 +314,6 @@ fun Message(
         horizontalAlignment = alignment,
         modifier = Modifier
             .fillMaxWidth()
-            .clickable {
-
-            }
     ) {
         Box(
             modifier = Modifier.fillMaxWidth(0.8f)
@@ -346,11 +391,14 @@ fun BottomBarChatScreen(
                     .size(24.dp)
             )
             BasicTextField(
-                value = chatValue,
-                onValueChange = {},
+                value = viewModel.sharedVM.messageTf.value,
+                onValueChange = {
+                    viewModel.sharedVM.messageTf.value = it
+                },
                 modifier = Modifier
-                    .weight(Float.MAX_VALUE)
-            ) { innerTextField ->
+                    .weight(Float.MAX_VALUE),
+
+                ) { innerTextField ->
                 Row(
                     modifier = Modifier
                         .clip(RoundedCornerShape(22.dp))
@@ -363,7 +411,7 @@ fun BottomBarChatScreen(
                         modifier = Modifier,
 
                         ) {
-                        if (chatValue.isNotBlank()) {
+                        if (viewModel.sharedVM.messageTf.value.isNotBlank()) {
                             innerTextField()
                         } else {
                             Text(text = stringResource(id = R.string.sendMessageHolder))

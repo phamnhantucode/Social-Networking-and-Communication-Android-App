@@ -9,9 +9,9 @@ import kotlinx.coroutines.flow.Flow
 interface ChatSocketService {
     suspend fun initWebSocketSession(): Resource<Unit>
 
-    suspend fun send(command: Command)
+    suspend fun send(command: String)
 
-    suspend fun observe(): Flow<Command>
+    fun observe(): Flow<Command>
 
     suspend fun initChat(dataInitChat: DataInitChat)
 

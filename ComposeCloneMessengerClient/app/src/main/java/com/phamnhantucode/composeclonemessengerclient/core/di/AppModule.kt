@@ -8,6 +8,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
+import io.ktor.client.features.cookies.*
 import io.ktor.client.features.json.*
 import io.ktor.client.features.json.serializer.*
 import io.ktor.client.features.logging.*
@@ -22,6 +23,7 @@ object AppModule {
     @Singleton
     fun provideHttpClient(): HttpClient {
         return HttpClient(CIO) {
+            install(HttpCookies)
             install(Logging)
             install(WebSockets)
             install(JsonFeature) {
