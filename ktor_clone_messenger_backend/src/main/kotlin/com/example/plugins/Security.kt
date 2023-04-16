@@ -10,16 +10,15 @@ import io.ktor.util.*
 fun Application.configureSecurity() {
     data class MySession(val count: Int = 0)
     install(Sessions) {
-        cookie<MessengerSession>("SESSION") {
-        }
+        cookie<MessengerSession>("SESSION", SessionStorageMemory())
     }
 
-    intercept(ApplicationCallPipeline.Features) {
-        if (call.sessions.get<MessengerSession>() == null) {
-            val username = call.parameters["username"] ?: "Guest"
-            call.sessions.set(MessengerSession(username, generateNonce()))
-        }
-    }
+//    intercept(ApplicationCallPipeline.Features) {
+//        if (call.sessions.get<MessengerSession>() == null) {
+//            val username = call.parameters["username"] ?: "Guest"
+//            call.sessions.set(MessengerSession(username, generateNonce()))
+//        }
+//    }
 //    routing {
 //        get("/session/increment") {
 //                val session = call.sessions.get<MySession>() ?: MySession()

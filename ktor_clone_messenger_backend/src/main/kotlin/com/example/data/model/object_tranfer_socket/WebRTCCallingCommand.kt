@@ -5,5 +5,6 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class WebRTCCallingCommand(
     val chatId: String,
+    val callerId: String,
     val commandCalling: String
 )

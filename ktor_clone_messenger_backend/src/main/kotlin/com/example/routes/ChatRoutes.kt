@@ -18,10 +18,10 @@ import io.ktor.server.sessions.*
 import io.ktor.server.websocket.*
 import io.ktor.util.*
 import io.ktor.websocket.*
+import kotlinx.coroutines.channels.ClosedSendChannelException
 import kotlinx.coroutines.channels.consumeEach
-import kotlinx.coroutines.flow.consumeAsFlow
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
@@ -59,6 +59,7 @@ fun Route.chat(chatController: ChatController) {
         var session = call.sessions.get<MessengerSession>()
         if(session == null) {
             close(CloseReason(CloseReason.Codes.VIOLATED_POLICY, "No session."))
+            println("No session.")
             return@webSocket
 //            call.sessions.set(MessengerSession("Guest", generateNonce()))
         }
@@ -69,21 +70,26 @@ fun Route.chat(chatController: ChatController) {
                 sessionId = session.sessionId,
                 socket = this
             )
+            println("OnJoin: ${session!!.userId} ${session!!.sessionId}")
 
-            chatController.observerIncoming(session, incoming
-                .consumeAsFlow()
-                .filter { it is Frame.Text }
-                .map {frame ->
-                    val command = Json.decodeFromString<Command>((frame as Frame.Text).readText())
-                    command
+
+            incoming.consumeEach { frame ->
+                if(frame is Frame.Text) {
+                    chatController.observerIncoming(session,
+                        Json.decodeFromString<Command>(frame.readText())
+                    )
                 }
-            )
+                else if (frame is Frame.Close) {
+                    chatController.tryDisconnect(session.userId)
+                }
+            }
+
         } catch(e: MemberAlreadyExistsException) {
             call.respond(HttpStatusCode.Conflict)
         } catch (e: Exception) {
             e.printStackTrace()
         } finally {
-//            chatController.tryDisconnect(session!!.userId)
+            chatController.tryDisconnect(session.userId)
         }
 
     }

@@ -19,13 +19,13 @@ class ChatController(
     val chatDataSource: ChatDataSource,
     val userDataSource: UserDataSource
 ) {
-    private val members = ConcurrentHashMap<String, Member>()
+    private val members = mutableMapOf<String, Member>()
     fun onJoin(
         userId: String,
         sessionId: String,
         socket: WebSocketSession
     ) {
-        if(members.containsKey(userId)) {
+        if (members.containsKey(userId)) {
             throw MemberAlreadyExistsException()
         }
         members[userId] = Member(
@@ -36,27 +36,32 @@ class ChatController(
     }
 
     suspend fun tryDisconnect(userId: String) {
+        println("OnClose: ${members[userId]?.userId} ${members[userId]?.sessionId}")
         members[userId]?.socket?.close()
-        if(members.containsKey(userId)) {
+        if (members.containsKey(userId)) {
             members.remove(userId)
         }
     }
 
 
-    suspend fun observerIncoming(session: MessengerSession, flow: Flow<Command>) {
-        val member = members[session.sessionId]
-        flow.onEach {command ->
-            when (command.command) {
-                CommandType.INIT_CHAT.command -> {
-                    initChat(command.data)
-                }
-                CommandType.SEND_MESSAGE.command -> {
-                    sendMessage(command.data)
-                }
-                CommandType.ON_CALL.command -> {
-                    if (member != null) {
-                        handleCalling(member, command.data)
-                    }
+    suspend fun observerIncoming(session: MessengerSession, command: Command) {
+        val member = members[session.userId]
+        print(member)
+        print(members)
+        when (command.command) {
+            CommandType.INIT_CHAT.command -> {
+                initChat(command.data)
+            }
+
+            CommandType.SEND_MESSAGE.command -> {
+                sendMessage(command.data)
+            }
+
+            CommandType.ON_CALL.command -> {
+                if (member != null) {
+
+                    print(command.toString())
+                    handleCalling(member, command.data)
                 }
             }
         }
@@ -64,13 +69,14 @@ class ChatController(
 
     suspend fun initChat(data: String) {
         val dataInitChat = Json.decodeFromString<DataInitChat>(data)
-        val participants = dataInitChat!!.participants!!.map {id ->
+        val participants = dataInitChat!!.participants!!.map { id ->
             userDataSource.getUser(id)!!
         }
 
         val chat = Chat(
             participants = participants,
-            messages = dataInitChat.message?.let { listOf(it) as MutableList<Message> } ?: (listOf<Message>() as MutableList<Message>),
+            messages = dataInitChat.message?.let { listOf(it) as MutableList<Message> }
+                ?: (listOf<Message>() as MutableList<Message>),
             createAt = dataInitChat.timeSend,
             updateAt = dataInitChat.timeSend
         )
@@ -82,7 +88,7 @@ class ChatController(
         var chat = chatDataSource.getChat(messageTranfer.chatId)
         chat = chat?.let { chatDataSource.insertMessage(it, messageTranfer) }
         chat?.let {
-            it.participants?.forEach {user ->
+            it.participants?.forEach { user ->
                 members[user.id]?.socket?.send(
                     Frame.Text(
                         Json.encodeToString(
@@ -101,12 +107,11 @@ class ChatController(
         }
     }
 
-    suspend fun handleCalling(session:Member, data: String) {
+    suspend fun handleCalling(session: Member, data: String) {
         val webRtcCallingCommand = Json.decodeFromString<WebRTCCallingCommand>(data)
+        val chat = chatDataSource.getChat(webRtcCallingCommand.chatId)
         val obj = WebRTCCalling.Builder()
-            .setMembers(members = members.map {
-                it.value
-            })
+            .setMembers(members = members.map { it.value })
 //            .setHandleState {
 //
 //            }
@@ -122,19 +127,23 @@ class ChatController(
             .build()
         when {
             webRtcCallingCommand.commandCalling.startsWith(WebRTCCommand.STATE.toString(), true) -> {
-//                obj.handleAnswer(session)
+                obj.handleState(session)
             }
+
             webRtcCallingCommand.commandCalling.startsWith(WebRTCCommand.ANSWER.toString(), true) -> {
-
+                obj.handleAnswer(session, webRtcCallingCommand.commandCalling)
             }
+
             webRtcCallingCommand.commandCalling.startsWith(WebRTCCommand.OFFER.toString(), true) -> {
-
+                obj.handleOffer(session, webRtcCallingCommand.commandCalling)
             }
-            webRtcCallingCommand.commandCalling.startsWith(WebRTCCommand.ICE.toString(), true) -> {
 
+            webRtcCallingCommand.commandCalling.startsWith(WebRTCCommand.ICE.toString(), true) -> {
+                obj.handleICE(session, webRtcCallingCommand.commandCalling)
             }
         }
     }
+
     suspend fun getAllMessages(chatId: String): List<Message> {
         return chatDataSource.getAllMessages(chatId) ?: throw ChatIsNotExistsException()
     }
@@ -159,5 +168,5 @@ class ChatController(
 }
 
 
-class MemberAlreadyExistsException: Exception("Member already exists")
-class ChatIsNotExistsException: Exception("ChatIsNotExistsException")
+class MemberAlreadyExistsException : Exception("Member already exists")
+class ChatIsNotExistsException : Exception("ChatIsNotExistsException")

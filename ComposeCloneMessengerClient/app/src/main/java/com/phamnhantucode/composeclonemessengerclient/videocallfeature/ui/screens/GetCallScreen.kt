@@ -1,7 +1,5 @@
-package com.phamnhantucode.composeclonemessengerclient.callfeature
+package com.phamnhantucode.composeclonemessengerclient.videocallfeature.ui.screens
 
-import android.util.Log.w
-import android.widget.Space
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -25,20 +23,21 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.phamnhantucode.composeclonemessengerclient.R
+import com.phamnhantucode.composeclonemessengerclient.core.webrtc.WebRTCCallingSessionState
 import com.phamnhantucode.composeclonemessengerclient.ui.theme.lightColor2
 
 @Composable
-fun OnCallScreen() {
+fun GetCallScreen(
+    state: WebRTCCallingSessionState,
+    onPickUp: ()-> Unit,
+    onHangUp: ()-> Unit,
+) {
     Surface(
         modifier = Modifier.fillMaxSize()
     ) {
-        var sizeImage by remember { mutableStateOf(IntSize.Zero) }
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .onGloballyPositioned {
-                    sizeImage = it.size
-                }
         ) {
 
             Image(
@@ -83,25 +82,25 @@ fun OnCallScreen() {
                         .fillMaxWidth()
                         .padding(horizontal = 18.dp, vertical = 24.dp)
                         .clip(CircleShape)
-                        .background(MaterialTheme.colors.background)
+                        .background(Color.Transparent)
                         .padding(12.dp)
                 ) {
                     Row(
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                        horizontalArrangement = Arrangement.SpaceAround,
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                             .fillMaxWidth()
                     ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.ic_video),
-                            contentDescription = "",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .clip(CircleShape)
-                                .background(lightColor2)
-                                .padding(16.dp)
-                                .size(30.dp)
-                        )
+//                        Image(
+//                            painter = painterResource(id = R.drawable.ic_video),
+//                            contentDescription = "",
+//                            contentScale = ContentScale.Crop,
+//                            modifier = Modifier
+//                                .clip(CircleShape)
+//                                .background(lightColor2)
+//                                .padding(16.dp)
+//                                .size(30.dp)
+//                        )
                         Image(
                             painter = painterResource(id = R.drawable.ic_call_fill),
                             contentDescription = "",
@@ -114,15 +113,26 @@ fun OnCallScreen() {
                             colorFilter = ColorFilter.tint(Color.White)
                         )
                         Image(
-                            painter = painterResource(id = R.drawable.ic_mic_fill),
+                            painter = painterResource(id = R.drawable.ic_call_fill),
                             contentDescription = "",
                             contentScale = ContentScale.Crop,
                             modifier = Modifier
                                 .clip(CircleShape)
-                                .background(lightColor2)
+                                .background(Color.Green)
                                 .padding(16.dp)
-                                .size(30.dp)
+                                .size(30.dp),
+                            colorFilter = ColorFilter.tint(Color.White)
                         )
+//                        Image(
+//                            painter = painterResource(id = R.drawable.ic_mic_fill),
+//                            contentDescription = "",
+//                            contentScale = ContentScale.Crop,
+//                            modifier = Modifier
+//                                .clip(CircleShape)
+//                                .background(lightColor2)
+//                                .padding(16.dp)
+//                                .size(30.dp)
+//                        )
 
 //                        Image(
 //                            painter = painterResource(id = R.drawable.ic_video),
