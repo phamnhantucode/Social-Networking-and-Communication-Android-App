@@ -4,5 +4,6 @@ enum class CommandType(val command: Int) {
     
     INIT_CHAT(1),
     SEND_MESSAGE(2),
-    RECEIVE_MESSAGE(3)
+    RECEIVE_MESSAGE(3),
+    ON_CALL(4)
 }

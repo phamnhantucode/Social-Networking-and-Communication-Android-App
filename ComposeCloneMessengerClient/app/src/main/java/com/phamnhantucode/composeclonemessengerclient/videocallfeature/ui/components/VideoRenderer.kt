@@ -2,6 +2,9 @@ package com.phamnhantucode.composeclonemessengerclient.videocallfeature.ui.compo
 
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.viewinterop.AndroidView
+import com.phamnhantucode.composeclonemessengerclient.core.webrtc.sessions.LocalWebRtcSessionManager
+import org.webrtc.RendererCommon
 import org.webrtc.VideoTrack
 
 @Composable
@@ -21,6 +24,25 @@ fun VideoRenderer(
             cleanTrack(view, trackState)
         }
     }
+    val sessionManager = LocalWebRtcSessionManager.current
+    AndroidView(
+        factory = { context ->
+            VideoTextureViewRenderer(context).apply {
+                init(
+                    sessionManager.peerConnectionFactory.eglBaseContext,
+                    object : RendererCommon.RendererEvents {
+                        override fun onFirstFrameRendered() = Unit
+
+                        override fun onFrameResolutionChanged(p0: Int, p1: Int, p2: Int) = Unit
+                    }
+                )
+                setupVideo(trackState, videoTrack, this)
+                view = this
+            }
+        },
+        update = { v -> setupVideo(trackState, videoTrack, v) },
+        modifier = modifier
+    )
 }
 
 private fun cleanTrack(

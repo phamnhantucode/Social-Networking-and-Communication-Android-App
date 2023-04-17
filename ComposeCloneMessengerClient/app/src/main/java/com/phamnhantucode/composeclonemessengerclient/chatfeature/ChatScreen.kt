@@ -156,6 +156,9 @@ fun TopBarChatScreen(
                 colorFilter = ColorFilter.tint(iconColor),
                 modifier = Modifier
                     .size(30.dp)
+                    .clickable {
+                        viewModel.onCall(viewModel.sharedVM.currentMessageState.value.id.toString())
+                    }
             )
             Image(
                 painter = painterResource(id = R.drawable.ic_info),

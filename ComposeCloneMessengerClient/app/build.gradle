@@ -97,4 +97,13 @@ dependencies {
 
     //Glide
     implementation "com.github.bumptech.glide:compose:1.0.0-alpha.1"
+
+    //WebRTC getStream
+    implementation "io.getstream:stream-webrtc-android:1.0.0"
+
+    //logger getStream
+    implementation "io.getstream:stream-log-android:1.1.3"
+
+    //OKHttp
+    implementation "com.squareup.okhttp3:logging-interceptor:4.10.0"
 }

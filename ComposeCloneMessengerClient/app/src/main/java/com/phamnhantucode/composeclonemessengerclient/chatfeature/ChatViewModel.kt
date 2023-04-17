@@ -16,12 +16,24 @@ import com.phamnhantucode.composeclonemessengerclient.chatfeature.data.ChatServi
 import com.phamnhantucode.composeclonemessengerclient.chatfeature.data.ChatSocketService
 import com.phamnhantucode.composeclonemessengerclient.core.SharedData
 import com.phamnhantucode.composeclonemessengerclient.core.util.Resource
+import com.phamnhantucode.composeclonemessengerclient.core.webrtc.SignalingClient
+import com.phamnhantucode.composeclonemessengerclient.core.webrtc.WebRTCCallingCommand
+import com.phamnhantucode.composeclonemessengerclient.core.webrtc.WebRTCCommand
+import com.phamnhantucode.composeclonemessengerclient.core.webrtc.peer.StreamPeerConnectionFactory
+import com.phamnhantucode.composeclonemessengerclient.core.webrtc.sessions.WebRTCSessionManager
+import com.phamnhantucode.composeclonemessengerclient.core.webrtc.sessions.WebRTCSessionManagerImpl
 import com.phamnhantucode.composeclonemessengerclient.loginfeature.LoginActivity
 import com.phamnhantucode.composeclonemessengerclient.loginfeature.data.LoginService
+import com.phamnhantucode.composeclonemessengerclient.videocallfeature.VideoCallActivity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -45,11 +57,15 @@ class ChatViewModel @Inject constructor(
             getAllChats(userId = user.userid)
             viewModelScope.launch {
                 val init = chatSocketService.initWebSocketSession()
+
                 when (init) {
                     is Resource.Success -> {
                         sharedVM.connectedSocket = true
-                        chatSocketService.observe()
-                            .onEach { command ->
+                        SharedData.sharedFlowSocket = chatSocketService.observe().shareIn(
+                            CoroutineScope(SupervisorJob() + Dispatchers.Default)
+                            , SharingStarted.WhileSubscribed(), 1)
+
+                            SharedData.sharedFlowSocket!!.onEach { command ->
                                 when (command.command) {
                                     CommandType.INIT_CHAT.command -> {
 
@@ -70,8 +86,26 @@ class ChatViewModel @Inject constructor(
                                             }
                                         }
                                     }
+                                    CommandType.ON_CALL.command -> {
+                                        if (!sharedVM.onCalling) {
+                                            val webRTCCommand = Json.decodeFromString<WebRTCCallingCommand>(command.data)
+                                            Log.e("SIGNALING", webRTCCommand.commandCalling.toString())
+                                            context.startActivity(
+                                                Intent(
+                                                    context,
+                                                    VideoCallActivity::class.java
+                                                ).apply {
+                                                    putExtra("chatId", webRTCCommand.chatId)
+                                                    putExtra("callerId", webRTCCommand.callerId)
+                                                    setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                                }
+                                            )
+                                            sharedVM.onCalling = true
+                                        }
+                                    }
+
                                 }
-                            }.launchIn(viewModelScope)
+                            }?.launchIn(viewModelScope)
                     }
                     is Resource.Error -> {
 //                        _toastEvent.emit(result.message ?: "Unknown error")
@@ -121,6 +155,20 @@ class ChatViewModel @Inject constructor(
         }
     }
 
+    fun onCall(chatId: String) {
+        sharedVM.onCalling = true
+        context.startActivity(
+            Intent(
+                context,
+                VideoCallActivity::class.java
+            ).apply {
+                putExtra("chatId",chatId)
+                putExtra("callerId", SharedData.user!!.userid)
+                setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+        )
+    }
+
     private fun sendMessage(
         chatId: String,
         senderId: String,
@@ -146,6 +194,12 @@ class ChatViewModel @Inject constructor(
                 )
 
             )
+        }
+    }
+
+    fun sendCommand(command: String) {
+        viewModelScope.launch {
+            chatSocketService.send(command)
         }
     }
 

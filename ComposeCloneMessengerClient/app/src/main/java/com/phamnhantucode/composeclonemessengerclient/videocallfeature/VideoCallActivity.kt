@@ -1,6 +1,7 @@
 package com.phamnhantucode.composeclonemessengerclient.videocallfeature
 
 import android.Manifest
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -10,19 +11,33 @@ import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.phamnhantucode.composeclonemessengerclient.callfeature.CallerScreen
-import com.phamnhantucode.composeclonemessengerclient.callfeature.GetCallScreen
+import com.phamnhantucode.composeclonemessengerclient.chatfeature.ChatActivity
+import com.phamnhantucode.composeclonemessengerclient.chatfeature.data.ChatSocketService
 import com.phamnhantucode.composeclonemessengerclient.core.SharedData
 import com.phamnhantucode.composeclonemessengerclient.core.webrtc.SignalingClient
+import com.phamnhantucode.composeclonemessengerclient.core.webrtc.WebRTCCallingSessionState
 import com.phamnhantucode.composeclonemessengerclient.core.webrtc.peer.StreamPeerConnectionFactory
 import com.phamnhantucode.composeclonemessengerclient.core.webrtc.sessions.LocalWebRtcSessionManager
 import com.phamnhantucode.composeclonemessengerclient.core.webrtc.sessions.WebRTCSessionManager
 import com.phamnhantucode.composeclonemessengerclient.core.webrtc.sessions.WebRTCSessionManagerImpl
 import com.phamnhantucode.composeclonemessengerclient.ui.theme.ComposeCloneMessengerClientTheme
+import com.phamnhantucode.composeclonemessengerclient.videocallfeature.ui.screens.CallerScreen
+import com.phamnhantucode.composeclonemessengerclient.videocallfeature.ui.screens.GetCallScreen
+import com.phamnhantucode.composeclonemessengerclient.videocallfeature.ui.screens.OnCallScreen
+import dagger.hilt.android.AndroidEntryPoint
+import io.ktor.client.*
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-
+@AndroidEntryPoint
 class VideoCallActivity : ComponentActivity() {
+    @Inject
+    lateinit var client: HttpClient
+
+    @Inject
+    lateinit var chatSocketService: ChatSocketService
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val chatId = intent.getStringExtra("chatId")
@@ -30,8 +45,10 @@ class VideoCallActivity : ComponentActivity() {
         requestPermissions(arrayOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO), 0)
         val callingManager: WebRTCSessionManager = WebRTCSessionManagerImpl(
             context = this,
-            signalingClient = SignalingClient(),
-            peerConnectionFactory = StreamPeerConnectionFactory(this)
+            signalingClient = SignalingClient(client, chatSocketService),
+            peerConnectionFactory = StreamPeerConnectionFactory(this),
+            chatId = chatId.toString(),
+            callerId = callerId.toString()
         )
 
         setContent {
@@ -51,23 +68,52 @@ class VideoCallActivity : ComponentActivity() {
                         }
 
                         val state by callingManager.signalingClient.sessionStateFlow.collectAsState()
+                        if (state == WebRTCCallingSessionState.Ready && isUserCall) {
+                            LaunchedEffect(key1 = Unit) {
+//                                callingManager.onSessionScreenReady()
+                                onCallScreen = true
+                            }
+                        }
+//                        if (state == WebRTCCallingSessionState.Creating && !isUserCall) {
+//                            LaunchedEffect(key1 = Unit) {
+//                                coroutineScope {
+//                                    launch {
+//                                        callingManager.onSessionScreenReady()
+//                                    }
+//                                }
+//                            }
+//                        }
+//                        if (state == WebRTCCallingSessionState.Active) {
+//                            LaunchedEffect(key1 = Unit) {
+//                                coroutineScope {
+//                                    launch {
+//                                        delay(1000)
+//                                        onCallScreen = true
+//                                    }
+//                                }
+//                            }
+//                        }
                         if (!onCallScreen) {
                             if (isUserCall) {
                                 CallerScreen(
-                                    state = state
+                                    state
                                 ) {
-                                    onCallScreen = false
+                                    startActivity(Intent(this, ChatActivity::class.java))
+                                    finish()
                                 }
 
                             } else {
-                                GetCallScreen(state = state,
-                                    onPickUp = {
-                                        onCallScreen = true
-                                    },
-                                    onHangUp =
+                                GetCallScreen(
+                                    state,
                                     {
-                                        onCallScreen = false
-                                    })
+                                        if (state == WebRTCCallingSessionState.Creating) {
+                                            onCallScreen = true
+                                        }
+                                    }
+                                ) {
+                                    startActivity(Intent(this, ChatActivity::class.java))
+                                    finish()
+                                }
                             }
                         } else {
                             OnCallScreen()

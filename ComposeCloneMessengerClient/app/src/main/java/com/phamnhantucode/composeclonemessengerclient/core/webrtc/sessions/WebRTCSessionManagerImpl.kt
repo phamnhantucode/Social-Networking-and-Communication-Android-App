@@ -7,11 +7,14 @@ import android.hardware.camera2.CameraMetadata
 import android.media.AudioDeviceInfo
 import android.media.AudioManager
 import android.os.Build
+import android.util.Log
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.core.content.getSystemService
 import com.phamnhantucode.composeclonemessengerclient.chatfeature.ChatViewModel
+import com.phamnhantucode.composeclonemessengerclient.core.SharedData
 import com.phamnhantucode.composeclonemessengerclient.core.webrtc.SignalingClient
+import com.phamnhantucode.composeclonemessengerclient.core.webrtc.WebRTCCallingSessionState
 import com.phamnhantucode.composeclonemessengerclient.core.webrtc.WebRTCCommand
 import com.phamnhantucode.composeclonemessengerclient.core.webrtc.audio.AudioHandler
 import com.phamnhantucode.composeclonemessengerclient.core.webrtc.audio.AudioSwitch
@@ -38,6 +41,8 @@ class WebRTCSessionManagerImpl(
     private val context: Context,
     override val signalingClient: SignalingClient,
     override val peerConnectionFactory: StreamPeerConnectionFactory,
+    val chatId: String,
+    val callerId: String
 ) : WebRTCSessionManager {
 
     private val logger by taggedLogger("Call:LocalWebRtcSessionManager")
@@ -122,7 +127,7 @@ class WebRTCSessionManagerImpl(
         )
     }
 
-    private var offer: String?= null
+    private var offer: String? = null
 
     private val peerConnection: StreamPeerConnection by lazy {
         peerConnectionFactory.makePeerConnection(
@@ -133,6 +138,7 @@ class WebRTCSessionManagerImpl(
             onIceCandidateRequest = { iceCandidate, _ ->
                 signalingClient.sendCommand(
                     chatId = "chatId",
+                    callerId,
                     WebRTCCommand.ICE,
                     "${iceCandidate.sdpMid}$ICE_SEPARATOR${iceCandidate.sdpMLineIndex}$ICE_SEPARATOR${iceCandidate.sdp}"
                 )
@@ -151,6 +157,14 @@ class WebRTCSessionManagerImpl(
 
     init {
         sessionManagerScope.launch {
+            if (SharedData.user!!.userid == callerId) {
+                signalingClient.sendCommand(
+                    chatId,callerId,
+                    WebRTCCommand.STATE,
+
+                    WebRTCCallingSessionState.Impossible.toString()
+                )
+            }
             signalingClient.signalingCommandFlow
                 .collect { commandToValue ->
                     when (commandToValue.first) {
@@ -163,6 +177,19 @@ class WebRTCSessionManagerImpl(
         }
     }
 
+    override fun sendReadyState() {
+        sessionManagerScope.launch {
+
+            signalingClient.sendCommand(
+                chatId,
+                callerId,
+                WebRTCCommand.STATE,
+                WebRTCCallingSessionState.Ready.toString()
+            )
+        }
+
+    }
+
 
     override fun onSessionScreenReady() {
         setupAudio()
@@ -172,10 +199,10 @@ class WebRTCSessionManagerImpl(
             // sending local video track to show local video from start
             _localVideoTrackFlow.emit(localVideoTrack)
 
-            if (offer != null) {
-                sendAnswer()
-            } else {
+            if (callerId == SharedData.user!!.userid) {
                 sendOffer()
+            } else {
+                if (offer != null) sendAnswer()
             }
         }
     }
@@ -287,6 +314,7 @@ class WebRTCSessionManagerImpl(
     }
 
     private suspend fun handleIce(iceMessage: String) {
+        Log.e("ICE: ", iceMessage)
         val iceArray = iceMessage.split(ICE_SEPARATOR)
         peerConnection.addIceCandidate(
             IceCandidate(
@@ -296,6 +324,7 @@ class WebRTCSessionManagerImpl(
             )
         )
     }
+
     private fun setupAudio() {
         logger.d { "[setupAudio] #sfu; no args" }
         audioHandler.start()
@@ -319,7 +348,7 @@ class WebRTCSessionManagerImpl(
         val answer = peerConnection.createAnswer().getOrThrow()
         val result = peerConnection.setLocalDescription(answer)
         result.onSuccess {
-            signalingClient.sendCommand("",WebRTCCommand.ANSWER, answer.description)
+            signalingClient.sendCommand("", callerId,WebRTCCommand.ANSWER, answer.description)
         }
         logger.d { "[SDP] send answer: ${answer.stringify()}" }
     }
@@ -328,7 +357,7 @@ class WebRTCSessionManagerImpl(
         val offer = peerConnection.createOffer().getOrThrow()
         val result = peerConnection.setLocalDescription(offer)
         result.onSuccess {
-            signalingClient.sendCommand("", WebRTCCommand.OFFER, offer.description)
+            signalingClient.sendCommand("",callerId, WebRTCCommand.OFFER, offer.description)
         }
         logger.d { "[SDP] send offer: ${offer.stringify()}" }
     }

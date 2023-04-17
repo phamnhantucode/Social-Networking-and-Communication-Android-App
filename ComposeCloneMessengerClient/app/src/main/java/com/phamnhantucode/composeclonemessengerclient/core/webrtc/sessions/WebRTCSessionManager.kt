@@ -25,4 +25,5 @@ interface WebRTCSessionManager {
     fun enableCamera(enabled: Boolean)
 
     fun disconnect()
+    fun sendReadyState()
 }

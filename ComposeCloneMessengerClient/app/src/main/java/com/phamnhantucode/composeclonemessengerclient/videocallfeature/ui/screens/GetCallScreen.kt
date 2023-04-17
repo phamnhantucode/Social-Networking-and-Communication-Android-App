@@ -2,6 +2,7 @@ package com.phamnhantucode.composeclonemessengerclient.videocallfeature.ui.scree
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.MaterialTheme
@@ -24,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.phamnhantucode.composeclonemessengerclient.R
 import com.phamnhantucode.composeclonemessengerclient.core.webrtc.WebRTCCallingSessionState
+import com.phamnhantucode.composeclonemessengerclient.core.webrtc.sessions.LocalWebRtcSessionManager
 import com.phamnhantucode.composeclonemessengerclient.ui.theme.lightColor2
 
 @Composable
@@ -32,6 +34,10 @@ fun GetCallScreen(
     onPickUp: ()-> Unit,
     onHangUp: ()-> Unit,
 ) {
+    val sessionManager = LocalWebRtcSessionManager.current
+    LaunchedEffect(key1 = Unit) {
+        sessionManager.sendReadyState()
+    }
     Surface(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -109,7 +115,8 @@ fun GetCallScreen(
                                 .clip(CircleShape)
                                 .background(Color.Red)
                                 .padding(16.dp)
-                                .size(30.dp),
+                                .size(30.dp)
+                                .clickable { onHangUp.invoke() },
                             colorFilter = ColorFilter.tint(Color.White)
                         )
                         Image(
@@ -120,7 +127,10 @@ fun GetCallScreen(
                                 .clip(CircleShape)
                                 .background(Color.Green)
                                 .padding(16.dp)
-                                .size(30.dp),
+                                .size(30.dp)
+                                .clickable {
+                                           onPickUp.invoke()
+                                },
                             colorFilter = ColorFilter.tint(Color.White)
                         )
 //                        Image(

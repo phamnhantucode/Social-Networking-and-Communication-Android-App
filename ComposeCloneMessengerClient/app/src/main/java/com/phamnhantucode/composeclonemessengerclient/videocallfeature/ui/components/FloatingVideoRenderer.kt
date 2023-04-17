@@ -91,7 +91,6 @@ fun FloatingVideoRenderer(
         )
     }
 }
-}
 
 private fun calculateHorizontalOffsetBounds(
     parentBounds: IntSize,

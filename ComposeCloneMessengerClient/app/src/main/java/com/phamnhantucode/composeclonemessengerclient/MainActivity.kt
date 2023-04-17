@@ -12,8 +12,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
-import com.phamnhantucode.composeclonemessengerclient.callfeature.GetCallScreen
-import com.phamnhantucode.composeclonemessengerclient.callfeature.OnCallScreen
 import com.phamnhantucode.composeclonemessengerclient.chatfeature.ChatScreen
 import com.phamnhantucode.composeclonemessengerclient.chatfeature.HomeScreen
 import com.phamnhantucode.composeclonemessengerclient.loginfeature.LoginActivity

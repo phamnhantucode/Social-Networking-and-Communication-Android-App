@@ -8,11 +8,8 @@ import android.os.Looper
 import android.util.AttributeSet
 import android.view.TextureView
 import android.view.TextureView.SurfaceTextureListener
-import org.webrtc.EglRenderer
+import org.webrtc.*
 import org.webrtc.RendererCommon.RendererEvents
-import org.webrtc.ThreadUtils
-import org.webrtc.VideoFrame
-import org.webrtc.VideoSink
 import java.util.concurrent.CountDownLatch
 
 open class VideoTextureViewRenderer @JvmOverloads constructor(
@@ -91,7 +88,14 @@ open class VideoTextureViewRenderer @JvmOverloads constructor(
             }
         }
     }
-
+    fun init(
+        sharedContext: EglBase.Context,
+        rendererEvents: RendererEvents
+    ) {
+        ThreadUtils.checkIsOnMainThread()
+        this.rendererEvents = rendererEvents
+        eglRenderer.init(sharedContext, EglBase.CONFIG_PLAIN, GlRectDrawer())
+    }
     private fun getResourceName(): String {
         return try {
             resources.getResourceEntryName(id)+": "

@@ -6,6 +6,7 @@ import android.media.AudioDeviceInfo
 import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.media.AudioManager.OnAudioFocusChangeListener
+import android.os.Build
 import android.util.Log
 
 
@@ -18,9 +19,10 @@ internal class AudioManagerAdapterImpl(
 ): AudioManagerAdapter {
     val TAG = "Call: AudioManager"
 
-    private var saveAudioMode = 0
-    private var saveIsMicrophoneMuted = false
-    private var savedSpeakerphoneEnable = false
+
+    private var savedAudioMode = 0
+    private var savedIsMicrophoneMuted = false
+    private var savedSpeakerphoneEnabled = false
     private var audioRequest: AudioFocusRequest? = null
 
     init {
@@ -46,27 +48,66 @@ internal class AudioManagerAdapterImpl(
     }
 
     override fun setAudioFocus() {
-        TODO("Not yet implemented")
+        // Request audio focus before making any device switch.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            audioRequest = audioFocusRequest.buildRequest(audioFocusChangeListener)
+            audioRequest?.let {
+                val result = audioManager.requestAudioFocus(it)
+//                logger.i { "[setAudioFocus] #new; completed: ${result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED}" }
+            }
+        } else {
+            val result = audioManager.requestAudioFocus(
+                audioFocusChangeListener,
+                AudioManager.STREAM_VOICE_CALL,
+                AudioManager.AUDIOFOCUS_GAIN_TRANSIENT
+            )
+//            logger.i { "[setAudioFocus] #old; completed: ${result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED}" }
+        }
+        /*
+         * Start by setting MODE_IN_COMMUNICATION as default audio mode. It is
+         * required to be in this mode when playout and/or recording starts for
+         * best possible VoIP performance. Some devices have difficulties with speaker mode
+         * if this is not set.
+         */
+        audioManager.mode = AudioManager.MODE_IN_COMMUNICATION
     }
 
     override fun enableBluetoothSco(enable: Boolean) {
-        TODO("Not yet implemented")
+//        logger.i { "[enableBluetoothSco] enable: $enable" }
+        audioManager.run { if (enable) startBluetoothSco() else stopBluetoothSco() }
     }
 
     override fun enableSpeakerphone(enable: Boolean) {
-        TODO("Not yet implemented")
+//        logger.i { "[enableSpeakerphone] enable: $enable" }
+        audioManager.isSpeakerphoneOn = enable
     }
 
     override fun mute(mute: Boolean) {
-        TODO("Not yet implemented")
+//        logger.i { "[mute] mute: $mute" }
+        audioManager.isMicrophoneMute = mute
     }
 
     override fun cacheAudioState() {
-        TODO("Not yet implemented")
+//        logger.i { "[cacheAudioState] no args" }
+        savedAudioMode = audioManager.mode
+        savedIsMicrophoneMuted = audioManager.isMicrophoneMute
+        savedSpeakerphoneEnabled = audioManager.isSpeakerphoneOn
     }
 
     override fun restoreAudioState() {
-        TODO("Not yet implemented")
+//        logger.i { "[cacheAudioState] no args" }
+        audioManager.mode = savedAudioMode
+        mute(savedIsMicrophoneMuted)
+        enableSpeakerphone(savedSpeakerphoneEnabled)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            audioRequest?.let {
+//                logger.d { "[cacheAudioState] abandonAudioFocusRequest: $it" }
+                audioManager.abandonAudioFocusRequest(it)
+            }
+        } else {
+//            logger.d { "[cacheAudioState] audioFocusChangeListener: $audioFocusChangeListener" }
+            audioManager.abandonAudioFocus(audioFocusChangeListener)
+        }
     }
 
 }

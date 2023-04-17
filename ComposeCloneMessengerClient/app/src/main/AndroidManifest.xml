@@ -3,6 +3,10 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
         android:name=".core.BaseApplication"
@@ -15,11 +19,16 @@
         android:theme="@style/Theme.ComposeCloneMessengerClient"
         tools:targetApi="31">
         <activity
-            android:windowSoftInputMode="adjustResize"
+            android:name=".videocallfeature.VideoCallActivity"
+            android:exported="false"
+            android:label="@string/title_activity_video_call"
+            android:theme="@style/Theme.ComposeCloneMessengerClient" />
+        <activity
             android:name=".chatfeature.ChatActivity"
             android:exported="false"
             android:label="@string/title_activity_chat"
-            android:theme="@style/Theme.ComposeCloneMessengerClient" />
+            android:theme="@style/Theme.ComposeCloneMessengerClient"
+            android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -33,7 +42,7 @@
         </activity>
         <activity
             android:name=".loginfeature.LoginActivity"
-            android:exported="false"></activity>
+            android:exported="false" />
     </application>
 
 </manifest>
