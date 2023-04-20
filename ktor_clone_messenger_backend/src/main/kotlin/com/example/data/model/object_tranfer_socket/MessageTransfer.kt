@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 data class MessageTransfer (
     val chatId: String,
     val senderId: String,
-    val text: String,
+    val content: String,
+    val type: String,
     val createAt: Long
 )

@@ -59,7 +59,6 @@ class ChatController(
 
             CommandType.ON_CALL.command -> {
                 if (member != null) {
-
                     print(command.toString())
                     handleCalling(member, command.data)
                 }
@@ -107,9 +106,33 @@ class ChatController(
         }
     }
 
+    suspend fun sendMessage(messageTranfer: MessageTransfer) {
+        var chat = chatDataSource.getChat(messageTranfer.chatId)
+        chat = chat?.let { chatDataSource.insertMessage(it, messageTranfer) }
+        chat?.let {
+            it.participants?.forEach { user ->
+                members[user.id]?.socket?.send(
+                    Frame.Text(
+                        Json.encodeToString(
+                            Command.serializer(),
+                            Command(
+                                command = CommandType.RECEIVE_MESSAGE.command,
+                                data = Json.encodeToString(
+                                    Chat.serializer(),
+                                    it
+                                )
+                            )
+                        )
+                    )
+                )
+            }
+        }
+    }
+
     suspend fun handleCalling(session: Member, data: String) {
         val webRtcCallingCommand = Json.decodeFromString<WebRTCCallingCommand>(data)
         val chat = chatDataSource.getChat(webRtcCallingCommand.chatId)
+
         val obj = WebRTCCalling.Builder()
             .setMembers(members = members.map { it.value })
 //            .setHandleState {
@@ -127,7 +150,7 @@ class ChatController(
             .build()
         when {
             webRtcCallingCommand.commandCalling.startsWith(WebRTCCommand.STATE.toString(), true) -> {
-                obj.handleState(session)
+                obj.handleState(session, webRtcCallingCommand.commandCalling)
             }
 
             webRtcCallingCommand.commandCalling.startsWith(WebRTCCommand.ANSWER.toString(), true) -> {

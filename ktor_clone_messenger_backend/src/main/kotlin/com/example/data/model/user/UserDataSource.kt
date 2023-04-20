@@ -8,4 +8,6 @@ interface UserDataSource {
     suspend fun insertUser(user: User)
 
     suspend fun deleteUser(user: User)
+
+    suspend fun findUserByName(username: String): List<User>
 }

@@ -1,5 +1,6 @@
 package com.example.routes
 
+import com.example.HOST_PREFIX
 import com.example.controller.ChatController
 import com.example.controller.LoginController
 import com.example.controller.MainController
@@ -118,7 +119,9 @@ fun Route.image(mainController: MainController) {
             image?.let {
                 call.respond(
                     HttpStatusCode.OK,
-                    it)
+                    it.copy(
+                        url = HOST_PREFIX + "/files/images/" + it.url
+                    ))
             }
     }
 }

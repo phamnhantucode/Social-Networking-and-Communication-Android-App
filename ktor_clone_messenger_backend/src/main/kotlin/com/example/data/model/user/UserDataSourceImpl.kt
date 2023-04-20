@@ -26,5 +26,9 @@ class UserDataSourceImpl(
         users.deleteOne(User::id eq user.id)
     }
 
+    override suspend fun findUserByName(username: String): List<User> {
+
+    }
+
 
 }

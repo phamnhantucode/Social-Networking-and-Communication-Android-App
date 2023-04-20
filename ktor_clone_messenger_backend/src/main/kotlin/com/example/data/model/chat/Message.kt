@@ -8,7 +8,7 @@ import org.bson.types.ObjectId
 @Serializable
 data class Message(
 
-    val type: String = "text",
+    val type: String = MessageType.TEXT.toString(),
     val content: String,
     val senderId: String,
 

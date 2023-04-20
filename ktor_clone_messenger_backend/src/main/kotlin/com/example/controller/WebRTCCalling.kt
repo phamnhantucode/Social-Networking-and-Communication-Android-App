@@ -11,7 +11,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
 
 interface WebRTCCalling {
-    fun handleState(session: Member)
+    fun handleState(session: Member, message: String)
 
     fun handleOffer(session: Member, message: String)
 
@@ -28,9 +28,10 @@ interface WebRTCCalling {
         private var state = ChatController.WebRTCCallingSessionState.Ready
         private var scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
+        private var isDelayed = false
         private var chatId = ""
         private var callerId = ""
-        private var handleState: (Member) -> Unit = {}
+        private var handleState: (Member, String) -> Unit = {_, _ -> }
         private var handleOffer: (Member, String) -> Unit = { _, _ -> }
         private var handleAnswer: (Member, String) -> Unit = { _, _ -> }
         private var handleICE: (Member, String) -> Unit = { _, _ -> }
@@ -44,7 +45,7 @@ interface WebRTCCalling {
             return this
         }
 
-        fun setHandleState(handle: (Member) -> Unit): Builder {
+        fun setHandleState(handle: (Member, String) -> Unit): Builder {
             handleState = handle
             return this
         }
@@ -71,27 +72,37 @@ interface WebRTCCalling {
                 var callingState = state
                 val callingScope = scope
                 private val mutex = Mutex()
-                override fun handleState(session: Member) {
+                override fun handleState(session: Member, message: String) {
                     callingScope.launch {
+//                        when {
+//                            message.endsWith("${ChatController.WebRTCCallingSessionState.Impossible}", true) -> {
+//                                callingState = ChatController.WebRTCCallingSessionState.valueOf(message.substringAfter(' '))
+//                                notifyAboutStateUpdate()
+//                            }
+//
+//                        }
+                        callingState = ChatController.WebRTCCallingSessionState.valueOf(message.substringAfter(' '))
+                        println("handling state from ${session.userId} ${callingState}")
+                        notifyAboutStateUpdate()
 //                        handleState(session)
-                        member.find { session.sessionId == it.sessionId }?.let {
-                            it.socket.send(Frame.Text(
-                                Json.encodeToString(
-                                    Command.serializer(),
-                                    Command(
-                                        CommandType.ON_CALL.command,
-                                        data = Json.encodeToString(
-                                            WebRTCCallingCommand.serializer(),
-                                            WebRTCCallingCommand(
-                                                chatId = chatId,
-                                                callerId = callerId,
-                                                "${ChatController.WebRTCCommand.STATE} $callingState"
-                                            )
-                                        )
-                                    )
-                                )
-                            ))
-                        }
+//                        member.find { session.sessionId == it.sessionId }?.let {
+//                            it.socket.send(Frame.Text(
+//                                Json.encodeToString(
+//                                    Command.serializer(),
+//                                    Command(
+//                                        CommandType.ON_CALL.command,
+//                                        data = Json.encodeToString(
+//                                            WebRTCCallingCommand.serializer(),
+//                                            WebRTCCallingCommand(
+//                                                chatId = chatId,
+//                                                callerId = callerId,
+//                                                "${ChatController.WebRTCCommand.STATE} $callingState"
+//                                            )
+//                                        )
+//                                    )
+//                                )
+//                            ))
+//                        }
                     }
 
                 }
@@ -105,7 +116,6 @@ interface WebRTCCalling {
                         callingState = ChatController.WebRTCCallingSessionState.Creating
                         println("handling offer from ${session.userId}")
                         notifyAboutStateUpdate()
-                        delay(2000)
                         member.filter { it.sessionId != session.sessionId }
                             .forEach {
                                 it.socket.send(Frame.Text(Json.encodeToString(
@@ -202,6 +212,8 @@ interface WebRTCCalling {
                     }
                 }
 
+
+
                 private fun notifyAboutStateUpdate() {
                     members.forEach { member ->
                         callingScope.launch {
@@ -220,6 +232,7 @@ interface WebRTCCalling {
                                 )
                             )))
                         }
+                        println("send state to ${member.userId} ${callingState}")
                     }
                 }
             }

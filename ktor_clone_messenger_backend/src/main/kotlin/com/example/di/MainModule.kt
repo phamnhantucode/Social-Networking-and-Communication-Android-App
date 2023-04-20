@@ -21,15 +21,15 @@ val mainModule = module {
             .getDatabase("clone_messenger")
     }
 
+
     single<ImageDataSource> {
         ImageDataSourceImpl(get())
     }
-
     single<UserDataSource> {
         UserDataSourceImpl(get())
     }
     single<ChatDataSource> {
-        ChatDataSourceImpl(get())
+        ChatDataSourceImpl(get(), get())
     }
 
     single<LoginController> {
